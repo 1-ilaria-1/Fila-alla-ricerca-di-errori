@@ -1,77 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fila Condivisa con Firebase</title>
-  </head>
-  <body>
-    <h1>Fila Condivisa con Firebase</h1>
-    <form id="queue-form">
-      <input type="text" id="name" placeholder="Inserisci il tuo nome" required>
-      <button type="submit">Aggiungi alla fila</button>
-    </form>
-    <ul id="queue-list"></ul>
-    <p id="queue-status">Persone in fila: 0</p>
-    <script type="module">
-      // Importa le librerie Firebase
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-      import { getDatabase, ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
-      // Configurazione Firebase
-      const firebaseConfig = {
-        apiKey: "AIzaSyBuoUzIXM9f75hYoNUANx5KqG3mhi_UuB0",
-        authDomain: "fila-bagno-80ff9.firebaseapp.com",
-        databaseURL: "https://fila-bagno-80ff9-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "fila-bagno-80ff9",
-        storageBucket: "fila-bagno-80ff9.appspot.com",
-        messagingSenderId: "425355361558",
-        appId: "1:425355361558:web:70366f1cc97db48915a437",
-        measurementId: "G-X400E56H9D"
-      };
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fila Condivisa con Firebase</title>
+</head>
 
-      // Inizializzazione Firebase
-      const app = initializeApp(firebaseConfig);
-      const database = getDatabase();
-      const queueRef = ref(database, "fila");
+<body>
+  <h1>Fila Condivisa con Firebase</h1>
+  <form id="queue-form">
+    <input type="text" id="name" placeholder="Inserisci il tuo nome" required>
+    <button type="submit">Aggiungi alla fila</button>
+  </form>
+  <ul id="queue-list"></ul>
+  <p id="queue-status">Persone in fila: 0</p>
+  <script type="module">
+    // Importa le librerie Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+    import { getDatabase, ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
-      const queueForm = document.getElementById("queue-form");
-      const queueList = document.getElementById("queue-list");
-      const queueStatus = document.getElementById("queue-status");
+    // Configurazione Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBuoUzIXM9f75hYoNUANx5KqG3mhi_UuB0",
+      authDomain: "fila-bagno-80ff9.firebaseapp.com",
+      databaseURL: "https://fila-bagno-80ff9-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "fila-bagno-80ff9",
+      storageBucket: "fila-bagno-80ff9.appspot.com",
+      messagingSenderId: "425355361558",
+      appId: "1:425355361558:web:70366f1cc97db48915a437",
+      measurementId: "G-X400E56H9D"
+    };
 
-      onValue(queueRef, (snapshot) => {
-        queueList.innerHTML = ""; // Pulisci la lista prima di aggiornarla
-        const queueArray = [];
-        snapshot.forEach((childSnapshot) => {
-          const name = childSnapshot.val();
-          queueArray.push(name);
+    // Inizializzazione Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase();
+    const queueRef = ref(database, "fila");
 
-          const listItem = document.createElement("li");
-          listItem.textContent = name;
+    const queueForm = document.getElementById("queue-form");
+    const queueList = document.getElementById("queue-list");
+    const queueStatus = document.getElementById("queue-status");
 
-          const deleteButton = document.createElement("button");
-          deleteButton.textContent = "Elimina";
-          deleteButton.addEventListener("click", () => {
-            remove(ref(queueRef, childSnapshot.key));
+    onValue(queueRef, (snapshot) => {
+      queueList.innerHTML = ""; // Pulisci la lista prima di aggiornarla
+      const queueArray = [];
+      snapshot.forEach((childSnapshot) => {
+        const name = childSnapshot.val();
+        queueArray.push(name);
+
+        const listItem = document.createElement("li");
+        listItem.textContent = name;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Elimina";
+        deleteButton.addEventListener("click", () => {
+          // Rimuovi solo se la rimozione nel database ha successo
+          remove(ref(queueRef, childSnapshot.key), (error) => {
+            if (error) {
+              console.error("Errore durante la rimozione:", error);
+            } else {
+              // Rimuovi l'elemento dalla lista solo dopo la rimozione nel database
+              queueList.removeChild(listItem);
+            }
           });
-
-          listItem.appendChild(deleteButton);
-          queueList.appendChild(listItem);
         });
 
-        queueStatus.textContent = "Persone in fila: " + queueArray.length;
+        listItem.appendChild(deleteButton);
+        queueList.appendChild(listItem);
       });
 
-      queueForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const nameInput = document.getElementById("name");
-        const name = nameInput.value;
+      queueStatus.textContent = "Persone in fila: " + queueArray.length;
+    });
 
-        if (name) {
-          push(queueRef, name);
-          nameInput.value = "";
-        }
-      });
-    </script>
-  </body>
+    queueForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById("name");
+      const name = nameInput.value;
+
+      if (name) {
+        push(queueRef, name);
+        nameInput.value = "";
+      }
+    });
+  </script>
+</body>
+
 </html>
