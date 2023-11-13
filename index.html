@@ -16,8 +16,6 @@
     <script type="module">
       // Importa le librerie Firebase
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-analytics.js";
-      import { getAuth } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
       import { getDatabase, ref, push, remove, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
       // Configurazione Firebase
@@ -34,27 +32,23 @@
 
       // Inizializzazione Firebase
       const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
-      const auth = getAuth();
       const database = getDatabase();
-
-      // Controlla lo stato di autenticazione
-      auth.onAuthStateChanged(function (user) {
-        if (user) {
-          // L'utente è autenticato
-          console.log("Utente autenticato:", user.uid);
-          // Qui puoi eseguire le operazioni di lettura/scrittura nel database
-        } else {
-          // L'utente non è autenticato
-          console.log("Utente non autenticato");
-          // Potresti voler reindirizzare l'utente al processo di autenticazione
-        }
-      });
+      const queueRef = ref(database, "fila");
 
       const queueForm = document.getElementById("queue-form");
       const queueList = document.getElementById("queue-list");
       const queueStatus = document.getElementById("queue-status");
-      const queueRef = ref(database, "fila");
+
+      // Funzione per rimuovere una persona dalla fila
+      const removePerson = (key) => {
+        remove(ref(queueRef, key), (error) => {
+          if (error) {
+            console.error("Errore durante la rimozione:", error);
+          } else {
+            console.log("Rimozione avvenuta con successo");
+          }
+        });
+      };
 
       onChildAdded(queueRef, (childSnapshot) => {
         const name = childSnapshot.val();
@@ -64,14 +58,8 @@
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Elimina";
         deleteButton.addEventListener("click", () => {
-          const childRef = ref(queueRef, childSnapshot.key);
-          remove(childRef, (error) => {
-            if (error) {
-              console.error("Errore durante la rimozione:", error);
-            } else {
-              console.log("Rimozione avvenuta con successo");
-            }
-          });
+          // Chiamiamo la funzione di rimozione con la chiave del child
+          removePerson(childSnapshot.key);
         });
 
         listItem.appendChild(deleteButton);
