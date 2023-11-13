@@ -16,7 +16,7 @@
     <script type="module">
       // Importa le librerie Firebase
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-      import { getDatabase, ref, push, remove, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+      import { getDatabase, ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
       // Configurazione Firebase
       const firebaseConfig = {
@@ -39,38 +39,24 @@
       const queueList = document.getElementById("queue-list");
       const queueStatus = document.getElementById("queue-status");
 
-      // Funzione per rimuovere una persona dalla fila
-      const removePerson = (key) => {
-        remove(ref(queueRef, key), (error) => {
-          if (error) {
-            console.error("Errore durante la rimozione:", error);
-          } else {
-            console.log("Rimozione avvenuta con successo");
-          }
-        });
-      };
-
-      onChildAdded(queueRef, (childSnapshot) => {
-        const name = childSnapshot.val();
-        const listItem = document.createElement("li");
-        listItem.textContent = name;
-
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Elimina";
-        deleteButton.addEventListener("click", () => {
-          // Chiamiamo la funzione di rimozione con la chiave del child
-          removePerson(childSnapshot.key);
-        });
-
-        listItem.appendChild(deleteButton);
-        queueList.appendChild(listItem);
-      });
-
       onValue(queueRef, (snapshot) => {
+        queueList.innerHTML = ""; // Pulisci la lista prima di aggiornarla
         const queueArray = [];
         snapshot.forEach((childSnapshot) => {
           const name = childSnapshot.val();
           queueArray.push(name);
+
+          const listItem = document.createElement("li");
+          listItem.textContent = name;
+
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "Elimina";
+          deleteButton.addEventListener("click", () => {
+            remove(ref(queueRef, childSnapshot.key));
+          });
+
+          listItem.appendChild(deleteButton);
+          queueList.appendChild(listItem);
         });
 
         queueStatus.textContent = "Persone in fila: " + queueArray.length;
